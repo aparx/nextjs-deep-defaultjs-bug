@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## What is the issue?
 
-## Getting Started
+The [default.js examples](https://nextjs.org/docs/app/api-reference/file-conventions/default#params-optional)
+suggest that it is possible to contain `default.js` files deeper than the parallel 
+route itself. Such that subfolders can contain a version of default Next displays when 
+a fallback is needed. This does not work as proposed in 14.2.0 & 14.2.2 when using a 
+route parameter.
 
-First, run the development server:
+## Expected behaviour & issue
+The route file-tree looks like this:
+```
+- @team
+-- [teamId]
+    default.tsx
+    page.tsx
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- [teamId]
+   page.tsx
+-- settings
+    page.tsx
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Both are simultaneously rendered beneath each other in the root `layout.tsx`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. We expect following when navigating to `/testId/`: (_passed_)
+   1. [x] the content of `@team/[teamId]/page.tsx` is rendered
+   2. [x] the content of `[teamId]/page.tsx` is rendered
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
-## Learn More
+2. We expect following when navigating to `/testId/settings`: (**_failed_**) 
+   1. [x] the content of `[teamId]/settings/page.tsx` is rendered
+   2. [ ] the content of `@team/[teamId]/default.tsx` is rendered (**Unexpected**)
 
-To learn more about Next.js, take a look at the following resources:
+By default, neither is rendered from point two, since a 404 is thrown. Only, when 
+adding a `default.js` at `@team/` directly, the first is rendered. The more deeply 
+located default file is **completely ignored**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+This is unexpected, according to the docs.
